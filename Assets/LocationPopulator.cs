@@ -42,7 +42,7 @@ public class DropdownPopulator : MonoBehaviour
             // Handle error here if needed
         }
 
-        dropdown.captionText.GetComponent<TextMeshProUGUI>().text = "Pilih Lokasi"; // Clear the loading text
+        dropdown.captionText.GetComponent<TextMeshProUGUI>().text = "Pilih Lokasi";
         dropdown.interactable = true;
     }
 

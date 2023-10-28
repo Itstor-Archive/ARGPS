@@ -448,10 +448,11 @@ MonoBehaviour:
   Session: {fileID: 193207847}
   EarthManager: {fileID: 691323912}
   ARCoreExtensions: {fileID: 1476232295}
+  AnchorManager: {fileID: 0}
   ArrowPrefab: {fileID: 6050743016507356964, guid: 085fcada2e3fffc41811fd97303bb35d, type: 3}
   OnboardingCanvas: {fileID: 782365343}
   ARViewCanvas: {fileID: 1041456683}
-  LocationDropdown: {fileID: 0}
+  LocationDropdown: {fileID: 1332610843}
   DebugText: {fileID: 1664493018}
 --- !u!4 &384014292
 Transform:
