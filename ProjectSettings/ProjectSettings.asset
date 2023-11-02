@@ -17,7 +17,7 @@ PlayerSettings:
   defaultCursor: {fileID: 0}
   cursorHotspot: {x: 0, y: 0}
   m_SplashScreenBackgroundColor: {r: 0.13725491, g: 0.12156863, b: 0.1254902, a: 1}
-  m_ShowUnitySplashScreen: 1
+  m_ShowUnitySplashScreen: 0
   m_ShowUnitySplashLogo: 1
   m_SplashScreenOverlayOpacity: 1
   m_SplashScreenAnimation: 1
@@ -138,10 +138,10 @@ PlayerSettings:
   loadStoreDebugModeEnabled: 0
   bundleVersion: 0.1
   preloadedAssets:
-  - {fileID: 8493618175198342010, guid: 61ab5b3046b6d9c44a00db77df96b229, type: 2}
-  - {fileID: 11400000, guid: 2d4bf8d8886ae96438d16787de898b94, type: 2}
   - {fileID: 4800000, guid: c9f956787b1d945e7b36e0516201fc76, type: 3}
   - {fileID: 4800000, guid: 0945859e5a1034c2cb6dce53cb4fb899, type: 3}
+  - {fileID: 8493618175198342010, guid: 61ab5b3046b6d9c44a00db77df96b229, type: 2}
+  - {fileID: 11400000, guid: 2d4bf8d8886ae96438d16787de898b94, type: 2}
   - {fileID: 11400000, guid: 36ce671d403c8bd4eb1994e423003808, type: 2}
   metroInputSource: 0
   wsaTransparentSwapchain: 0

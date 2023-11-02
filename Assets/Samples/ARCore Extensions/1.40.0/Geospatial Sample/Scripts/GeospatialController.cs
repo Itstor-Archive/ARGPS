@@ -11,6 +11,8 @@ using UnityEngine.Networking;
 using Google.XR.ARCoreExtensions.GeospatialCreator.Internal;
 using EasyUI.Toast;
 using Unity.VisualScripting;
+using System.Collections.Generic;
+
 
 
 
@@ -68,13 +70,19 @@ public class GeospatialController : MonoBehaviour
         public Node[] nodes;
     }
 
+    [System.Serializable]
+    private class Error
+    {
+        public string error;
+    }
+
     public void OnStartClicked()
     {
-        var location = LocationDropdown.GetComponent<DropdownPopulator>().GetSelectedPlaceId();
+        var destinationId = LocationDropdown.GetComponent<DropdownPopulator>().GetSelectedPlaceId();
 
-        Debug.Log("Selected location: " + location);
+        Debug.Log("Selected location: " + destinationId);
 
-        if (location == -1)
+        if (destinationId == -1)
         {
             Debug.LogError("Invalid dropdown index!");
             Toast.Show("Pilih lokasi terlebih dahulu");
@@ -83,28 +91,25 @@ public class GeospatialController : MonoBehaviour
 
         Debug.Log("Start AR");
 
-        var pose = EarthManager.CameraGeospatialPose;
-        var latitude = pose.Latitude;
-        var longitude = pose.Longitude;
-
-        ARGeospatialAnchor anchor = AnchorManager.AddAnchor(latitude, longitude, 0.5f, Quaternion.identity);
-
-        if (anchor == null)
+        if (EarthManager.EarthTrackingState != TrackingState.Tracking)
         {
-            Debug.LogError("Failed to create anchor!");
-            Toast.Show("Gagal membuat anchor");
+            Debug.LogError("Earth is not tracking!");
+            Toast.Show("Geospatial belum siap");
             return;
         }
 
-        GameObject arrowInstance = Instantiate(ArrowPrefab);
+        var location = Input.location.lastData;
 
-        anchor.gameObject.SetActive(true);
-        arrowInstance.transform.SetParent(anchor.transform, false);
+        // var latitude = location.latitude;
+        // var longitude = location.longitude;
 
-        // string apiURL = "https://backend-protel-nasdem.vercel.app/api/route"; // replace with your API endpoint
-        // apiURL += $"?latitude={latitude}&longitude={longitude}&endId={location}";
+        var latitude = -7.28454511607389;
+        var longitude = 112.79530739674819;
 
-        // StartCoroutine(CallAPI(apiURL));
+        string apiURL = "https://backend-protel-nasdem.vercel.app/api/route"; // replace with your API endpoint
+        apiURL += $"?latitude={latitude}&longitude={longitude}&endId={destinationId}";
+
+        StartCoroutine(CallAPI(apiURL));
     }
 
     private IEnumerator CallAPI(string url)
@@ -113,45 +118,95 @@ public class GeospatialController : MonoBehaviour
         {
             yield return request.SendWebRequest();
 
-            if (request.result == UnityWebRequest.Result.ConnectionError || request.result == UnityWebRequest.Result.ProtocolError)
+            // if (request.result == UnityWebRequest.Result.ConnectionError || request.result == UnityWebRequest.Result.ProtocolError)
+            if (false)
             {
-                Toast.Show(request.error);
+                var jsonResponse = request.downloadHandler.text;
+                var error = JsonUtility.FromJson<Error>(jsonResponse);
+                Toast.Show(error.error);
                 Debug.LogError($"Error calling API: {request.error}");
             }
             else
             {
                 var jsonResponse = request.downloadHandler.text;
-                var nodes = JsonUtility.FromJson<NodeList>(jsonResponse).nodes;
+                // var nodes = JsonUtility.FromJson<NodeList>(jsonResponse).nodes;
 
-                for (int i = 0; i < nodes.Length; i++)
+                List<Node> nodes = new List<Node>
+                {
+                    new Node
+                    {
+                        id = 1,
+                        places_name = "Lokasi Anda",
+                        latitude = -7.286942608847051,
+                        longitude = 112.79832048186695,
+                        total_nodes = 0
+                    },
+                    new Node
+                    {
+                        id = 2,
+                        places_name = "Lokasi 1",
+                        latitude = -7.286826875095186,
+                        longitude = 112.79835669169225,
+                        total_nodes = 0
+                    },
+                    new Node
+                    {
+                        id = 3,
+                        places_name = "Lokasi 2",
+                        latitude = -7.286786966875544,
+                        longitude = 112.79826147329109,
+                        total_nodes = 0
+                    },
+                    new Node
+                    {
+                        id = 4,
+                        places_name = "Lokasi 3",
+                        latitude = -7.286840177396419,
+                        longitude = 112.79781220297657,
+                        total_nodes = 0
+                    },
+                };
+
+                GameObject previousArrow = null;
+                Vector3? previousPosition = null;
+
+                for (int i = 0; i < nodes.Count; i++)
                 {
                     var node = nodes[i];
 
-                    GameObject arrowInstance = Instantiate(ArrowPrefab);
-                    if (i != nodes.Length - 1)
+                    ARGeospatialAnchor anchor = AnchorManager.AddAnchor(node.latitude, node.longitude, 0.5f, Quaternion.identity);
+
+                    if (anchor == null)
                     {
-                        var nextNode = nodes[i + 1];
-                        var direction = new Vector3((float)nextNode.latitude, 0, (float)nextNode.longitude) - arrowInstance.transform.position;
-                        arrowInstance.transform.rotation = Quaternion.LookRotation(direction);
+                        Debug.LogError("Failed to create anchor!");
+                        Toast.Show("Gagal membuat anchor");
+                        continue;
                     }
-                    else
+
+                    GameObject arrowInstance = Instantiate(ArrowPrefab);
+
+                    anchor.gameObject.SetActive(true);
+                    arrowInstance.transform.SetParent(anchor.transform, false);
+
+                    if (previousPosition.HasValue)
+                    {
+                        Vector3 directionToNext = anchor.transform.position - previousPosition.Value;
+                        float angle = Mathf.Atan2(directionToNext.z, directionToNext.x) * Mathf.Rad2Deg;
+                        previousArrow.transform.rotation = Quaternion.Euler(0, -angle, 0);
+                    }
+
+                    if (i == nodes.Count - 1)
                     {
                         arrowInstance.transform.rotation = Quaternion.Euler(0, 0, 90);
                     }
 
-                    // var anchor = arrowInstance.GetComponent<ARGeospatialCreatorAnchor>();
-                    // if (anchor != null)
-                    // {
-                    //     anchor.Latitude = node.latitude;
-                    //     anchor.Longitude = node.longitude;
-                    //     anchor.AltitudeType = AnchorAltitudeType.Terrain;
-                    //     anchor.Altitude = 0.5f;
-                    // }
-
-                    arrowInstance.transform.SetParent(SessionOrigin.TrackablesParent, false);
-                    arrowInstance.transform.position = new Vector3((float)node.latitude, 0, (float)node.longitude);
+                    previousArrow = arrowInstance;
+                    previousPosition = anchor.transform.position;
                 }
+
             }
+
+            ShowOnboarding(false);
         }
     }
 
@@ -180,11 +235,6 @@ public class GeospatialController : MonoBehaviour
         }
     }
 
-    public void Start()
-    {
-        StartAR(true);
-    }
-
     public void OnEnable()
     {
         _startLocationService = StartLocationService();
@@ -196,6 +246,11 @@ public class GeospatialController : MonoBehaviour
 
         _localizationPassedTime = 0f;
         _isLocalizing = true;
+    }
+
+    public void Start()
+    {
+        StartAR(true);
     }
 
     public void OnDisable()
@@ -266,6 +321,7 @@ public class GeospatialController : MonoBehaviour
         var earthState = EarthManager.EarthState;
         if (earthState == EarthState.ErrorEarthNotReady)
         {
+            Debug.LogWarning("Inisialisasi Geospatial");
             Toast.Show("Inisialisasi Geospatial");
             return;
         }
@@ -329,7 +385,6 @@ public class GeospatialController : MonoBehaviour
     private void ShowOnboarding(bool enable)
     {
         OnboardingCanvas.SetActive(enable);
-        ARViewCanvas.SetActive(!enable);
     }
 
     private IEnumerator AvailabilityCheck()
@@ -477,6 +532,7 @@ public class GeospatialController : MonoBehaviour
             $"  ALT: {pose.Altitude:F2}\n" +
             $"  VerticalAcc: {pose.VerticalAccuracy:F2}\n" +
             $". EunRotation: {pose.EunRotation:F2}\n" +
-            $"  OrientationYawAcc: {pose.OrientationYawAccuracy:F2}";
+            $"  OrientationYawAcc: {pose.OrientationYawAccuracy:F2}" +
+            $"  Reason: {ARSession.notTrackingReason}\n";
     }
 }
